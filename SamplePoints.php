@@ -2,8 +2,10 @@
 error_reporting(E_ERROR | E_PARSE | E_NOTICE);
 include('staticContent.php');
 
-$dateForSample = strtotime('2017-01-03 00:00:00');
-$dateStartFrom = strtotime('2017-01-01 00:00:00');
+$inputDate = trim($argv[1]) . ' 00:00:00';
+$yearStartDate = trim($argv[2].'-01-01 00:00:00');
+$dateForSample = strtotime($inputDate);
+$dateStartFrom = strtotime($yearStartDate);
 $hoursToLowProduction = array(12,3);
 
 $dateDiff = ($dateStartFrom - $dateForSample);
@@ -13,14 +15,14 @@ if($dateDiffHours >= 0){
 	for($i=0; $i<24; $i++){
 		if($i<7 || $i>19){
 			$powerProduced = 0;
-			$timestamp = strtotime('2017-01-03 00:00:00') + ((60*60)*($i+1));
+			$timestamp = strtotime($dateForSample) + ((60*60)*($i+1));
 		} else {
 			if(in_array($i, $hoursToLowProduction)){
 				$powerProduced =(($mumbai[$dateDiffHours+$i]* 70)/100);
-				$timestamp = strtotime('2017-01-03 00:00:00') + ((60*60)*($i+1));
+				$timestamp = strtotime($dateForSample) + ((60*60)*($i+1));
 			} else {
 				$powerProduced =(($mumbai[$dateDiffHours+$i]* 120)/100);
-				$timestamp = strtotime('2017-01-03 00:00:00') + ((60*60)*($i+1));
+				$timestamp = strtotime($dateForSample) + ((60*60)*($i+1));
 			}
 		}
 		echo "Hour(i)= ".$i. " Power=". $powerProduced . " timestamp=". $timestamp."\n";
@@ -31,7 +33,7 @@ if($dateDiffHours >= 0){
 }
 
 function store_date_influx($powerProduced, $timestamp,$url = 'http://localhost:8086/write?db=oorjan'){
-	$input = 'solar_device_performance,deviceId=1,output=' . $powerProduced . ' inputFrom="script"'.$timestamp;
+	echo $input = 'solar_device_performance,deviceId=1,output=' . $powerProduced . ' inputFrom="script" '.$timestamp;exit;
 	$curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => $url,
