@@ -1,31 +1,32 @@
 <?php
 error_reporting(E_ERROR | E_PARSE | E_NOTICE);
 include('staticContent.php');
-
 $inputDate = trim($argv[1]) . ' 00:00:00';
 $yearStartDate = trim($argv[2].'-01-01 00:00:00');
-$dateForSample = strtotime($inputDate);
-$dateStartFrom = strtotime($yearStartDate);
+echo 'Started for ';
+echo $dateForSample = strtotime($inputDate);
+echo ' From ';
+echo $dateStartFrom = strtotime($yearStartDate);
 $hoursToLowProduction = array(12,3);
-
-$dateDiff = ($dateStartFrom - $dateForSample);
+echo ' Diff ';
+echo $dateDiff = ($dateStartFrom - $dateForSample);
 //echo $dateDiff;
 $dateDiffHours = abs($dateDiff/3600);
 if($dateDiffHours >= 0){
 	for($i=0; $i<24; $i++){
 		if($i<7 || $i>19){
 			$powerProduced = 0;
-			$timestamp = strtotime($dateForSample) + ((60*60)*($i+1));
+			$timestamp = strtotime($inputDate) + ((60*60)*($i+1));
 		} else {
 			if(in_array($i, $hoursToLowProduction)){
 				$powerProduced =(($mumbai[$dateDiffHours+$i]* 70)/100);
-				$timestamp = strtotime($dateForSample) + ((60*60)*($i+1));
+				$timestamp = strtotime($inputDate) + ((60*60)*($i+1));
 			} else {
 				$powerProduced =(($mumbai[$dateDiffHours+$i]* 120)/100);
-				$timestamp = strtotime($dateForSample) + ((60*60)*($i+1));
+				$timestamp = strtotime($inputDate) + ((60*60)*($i+1));
 			}
 		}
-		echo "Hour(i)= ".$i. " Power=". $powerProduced . " timestamp=". $timestamp."\n";
+		echo "\nHour(i)= ".$i. " Power=". $powerProduced . " timestamp=". $timestamp;
 		$is_dump_success = store_date_influx($powerProduced, $timestamp);
 	}
 } else {
