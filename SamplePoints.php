@@ -33,7 +33,7 @@ if($dateDiffHours >= 0){
 }
 
 function store_date_influx($powerProduced, $timestamp,$url = 'http://localhost:8086/write?db=oorjan'){
-	echo $input = 'solar_device_performance,deviceId=1,output=' . $powerProduced . ' inputFrom="script" '.$timestamp;exit;
+	$input = 'solar_device_performance,deviceId=1,output=' . $powerProduced . ' inputFrom="script" '.$timestamp;
 	$curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => $url,
