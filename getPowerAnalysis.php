@@ -18,7 +18,7 @@ $defaulted_Device = array();
 for($i=0; $i<24 ; $i++){
 	$minPowerProduced = $mumbai[$dateDiffHours+$i];
 	$timestamp = $dateForSample + ((60*60)*($i+1));
-	echo "Hour(i)= ".$i. " Power=". $minPowerProduced . " timestamp=". $timestamp."\n";
+	//echo "Hour(i)= ".$i. " Power=". $minPowerProduced . " timestamp=". $timestamp."\n";
 	$generatedPower = getPowerConsumed($solar_device_id,$timestamp,FLUX_DB_URL);
 	if(!$generatedPower){
 		continue;
