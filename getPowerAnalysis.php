@@ -2,21 +2,19 @@
 error_reporting(E_ERROR | E_PARSE | E_NOTICE);
 include('staticContent.php');
 
-// if(!isset($_GET)){
-//    $message="Argument Not received";
-//    returnCustomError($message);
-// }
-// $solar_device_id = $_GET['solar_id'];
-// $input_date = $_GET['date'];
-var_dump(date("d-m-Y", strtotime("01-02-2017")));
-echo $startTime = strtotime(date("d-m-Y", strtotime("01-01-2017")));
+if(!isset($_GET)){
+   $message="Argument Not received";
+   returnCustomError($message);
+}
+$solar_device_id = $_GET['solar_id'];
+$input_date = $_GET['date'];
+echo $startTime = strtotime(date("d-m-Y", strtotime($input_date)));
 echo " ";
 echo $dateForSample = $startTime;
 echo " ";
 echo $dateStartFrom = strtotime(date('Y-01-01', $startTime));
 echo " ";
 echo $dateDiff = ($dateStartFrom - $dateForSample);
-//echo $dateDiff;
 echo " ";
 echo $dateDiffHours = abs($dateDiff/3600);
 $defaulted_Device = array();
@@ -24,13 +22,13 @@ for($i=0; $i<24 ; $i++){
 	$minPowerProduced = $mumbai[$dateDiffHours+$i];
 	$timestamp = $dateForSample + ((60*60)*($i+1));
 	echo "Hour(i)= ".$i. " Power=". $minPowerProduced . " timestamp=". $timestamp."\n";
-	$generatedPower = getPowerConsumed(1,$timestamp);
-	if(!$generatePower){
+	$generatedPower = getPowerConsumed($solar_device_id,$timestamp);
+	if(!$generatedPower){
 		continue;
 	}
 	$output_produced_percent = (($generatedPower/$minPowerProduced)*100);
 	if( $output_produced_percent < 80){
-		$defaulted_Device[] = array('time'=> $timestamp, 'minOutput' => $minPowerProduced, 'actualOutput'=> $generatedPower, 'percentDiff'=>$output_produced_percent);
+		$defaulted_Device[] = array('time'=> date("d-m-Y H:i:s", $timestamp), 'minOutput' => $minPowerProduced, 'actualOutput'=> $generatedPower, 'percentDiff'=>$output_produced_percent);
 	}
 }
 if(count($defaulted_Device) > 0 ){
@@ -63,8 +61,7 @@ function getPowerConsumed($deviceId = '1', $timestamp = 1485950400, $url ='http:
     $error = curl_error($curl);
     $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
-   var_dump($result);
-	 if($httpCode == 200 ){
+	if($httpCode == 200 ){
         if(isset($result->results[0]->series)){
 		return $result->results[0]->series[0]->values[0][3];
 	}else {
