@@ -8,8 +8,7 @@ include('staticContent.php');
 // }
 // $solar_device_id = $_GET['solar_id'];
 // $input_date = $_GET['date'];
-var_dump(strtotime('12-1-2017'));
-echo $startTime = strtotime('12-1-2017');
+echo $startTime = strtotime(date("d-m-Y", strtotime("04-02-2017")));
 echo " ";
 echo $dateForSample = $startTime;
 echo " ";
@@ -23,11 +22,14 @@ $defaulted_Device = array();
 for($i=0; $i<24 ; $i++){
 	$minPowerProduced = $mumbai[$dateDiffHours+$i];
 	$timestamp = $dateForSample + ((60*60)*($i+1));
-	echo "Hour(i)= ".$i. " Power=". $minPowerProduced . " timestamp=". $timestamp."\n";exit;
-	$generatedPower = getPowerConsumed();
+	echo "Hour(i)= ".$i. " Power=". $minPowerProduced . " timestamp=". $timestamp."\n";
+	$generatedPower = getPowerConsumed(1,$timestamp);
+	if(!$generatedPower){
+		continue;
+	}
 	$output_produced_percent = (($generatedPower/$minPowerProduced)*100);
 	if( $output_produced_percent < 80){
-		$defaulted_Device[] = array('time'=> $timestamp, 'minOutput' => $minPowerProduced, 'actualOutput'=> $generatedPower, 'percentDiff'=>$output_produced_percent);
+		$defaulted_Device[] = array('time'=> date("d-m-Y H:i:s", $timestamp), 'minOutput' => $minPowerProduced, 'actualOutput'=> $generatedPower, 'percentDiff'=>$output_produced_percent);
 	}
 }
 if(count($defaulted_Device) > 0 ){
@@ -56,24 +58,28 @@ function getPowerConsumed($deviceId = '1', $timestamp = 1485950400, $url ='http:
     CURLOPT_HTTPHEADER => array("cache-control: no-cache","content-type: text/plain"),
     ));
     $result = curl_exec($curl);
-    $result = json_decode($result); print_r($result); exit;
+    $result = json_decode($result);
     $error = curl_error($curl);
     $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
-    if($httpCode == 200 && $result->key ){
-        return $result->results[0]->series[0]->values[0][3];
-    }
 
+	 if($httpCode == 200 ){
+        if(isset($result->results[0]->series)){
+		return $result->results[0]->series[0]->values[0][3];
+	}else {
+		return false;
+	    }
+	}
 }
 
 function returnSuccess($message, $data=array(), $meta = null) {
     $result = json_encode(array( "m" => $message, "s" => 1,"meta" => $meta, "d" => $data));
-    $this->returnJSON($result);
+    returnJSON($result);
 }
 
 function returnCustomError($message) {
     $result = json_encode(array(  "m" => $message, "s" => 0, "d" => array()));
-    $this->returnJSON($result);
+    returnJSON($result);
 }
 
 function returnJSON($result){
