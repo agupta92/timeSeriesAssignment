@@ -1,6 +1,8 @@
 <?php
 error_reporting(E_ERROR | E_PARSE | E_NOTICE);
 include('staticContent.php');
+include('config.php');
+
 $inputDate = trim($argv[1]) . ' 00:00:00';
 $yearStartDate = trim($argv[2].'-01-01 00:00:00');
 echo 'Started for ';
@@ -27,13 +29,14 @@ if($dateDiffHours >= 0){
 			}
 		}
 		echo "\nHour(i)= ".$i. " Power=". $powerProduced . " timestamp=". $timestamp;
-		$is_dump_success = store_date_influx($powerProduced, $timestamp);
+		$is_dump_success = store_date_influx($powerProduced, $timestamp,FLUX_DB_URL);
 	}
 } else {
 	echo "Error: From date is greater than sample date";
 }
 
-function store_date_influx($powerProduced, $timestamp,$url = 'http://localhost:8086/write?db=oorjan'){
+function store_date_influx($powerProduced, $timestamp,$url){
+	$url = $url . '?db=oorjan';
 	$input = 'solar_device_performance,deviceId=1,output=' . $powerProduced . ' inputFrom="script" '.$timestamp;
 	$curl = curl_init();
     curl_setopt_array($curl, array(

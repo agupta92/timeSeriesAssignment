@@ -1,6 +1,7 @@
 <?php
 error_reporting(E_ERROR | E_PARSE | E_NOTICE);
 include('staticContent.php');
+include('config.php');
 
 if(!isset($_GET)){
    $message="Argument Not received";
@@ -8,21 +9,17 @@ if(!isset($_GET)){
 }
 $solar_device_id = $_GET['solar_id'];
 $input_date = $_GET['date'];
-echo $startTime = strtotime(date("d-m-Y", strtotime($input_date)));
-echo " ";
-echo $dateForSample = $startTime;
-echo " ";
-echo $dateStartFrom = strtotime(date('Y-01-01', $startTime));
-echo " ";
-echo $dateDiff = ($dateStartFrom - $dateForSample);
-echo " ";
-echo $dateDiffHours = abs($dateDiff/3600);
+$startTime = strtotime(date("d-m-Y", strtotime($input_date)));
+$dateForSample = $startTime;
+$dateStartFrom = strtotime(date('Y-01-01', $startTime));
+$dateDiff = ($dateStartFrom - $dateForSample);
+$dateDiffHours = abs($dateDiff/3600);
 $defaulted_Device = array();
 for($i=0; $i<24 ; $i++){
 	$minPowerProduced = $mumbai[$dateDiffHours+$i];
 	$timestamp = $dateForSample + ((60*60)*($i+1));
 	echo "Hour(i)= ".$i. " Power=". $minPowerProduced . " timestamp=". $timestamp."\n";
-	$generatedPower = getPowerConsumed($solar_device_id,$timestamp);
+	$generatedPower = getPowerConsumed($solar_device_id,$timestamp,FLUX_DB_URL);
 	if(!$generatedPower){
 		continue;
 	}
@@ -35,11 +32,12 @@ if(count($defaulted_Device) > 0 ){
 	$message = "Successful";
 	returnSuccess($message,$defaulted_Device);
 } else {
-	$message = "Device generated Out above threshold";
+	$message = "Output generated is above or equal to threshold power";
 	returnSuccess($message);
 }
 
-function getPowerConsumed($deviceId = '1', $timestamp = 1485950400, $url ='http://localhost:8086/query?'){
+function getPowerConsumed($deviceId = '1', $timestamp, $url){
+	$url = $url.'query';
 	$query = http_build_query([
          'db' => 'oorjan',
          'q' => "SELECT * FROM solar_device_performance where deviceId='".$deviceId."' AND time=". $timestamp
