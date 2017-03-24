@@ -9,14 +9,32 @@ if(!isset($_GET)){
 }
 $solar_device_id = $_GET['solar_id'];
 $input_date = $_GET['date'];
+
+$sqlGetUserCity = "select user_city from user_records where user_public_id =". $solar_device_id;
+$link = dbConnection();
+if ($result = mysqli_query($link, $sqlGetUserCity)) {
+    $final_result = mysqli_fetch_all($result,MYSQLI_ASSOC);
+	/* free result set */
+    mysqli_free_result($final_result);
+}
+$user_city = $final_result[0]['user_city'];
 $startTime = strtotime(date("d-m-Y", strtotime($input_date)));
 $dateForSample = $startTime;
 $dateStartFrom = strtotime(date('Y-01-01', $startTime));
 $dateDiff = ($dateStartFrom - $dateForSample);
 $dateDiffHours = abs($dateDiff/3600);
+$sqlGetRequiredPower = "select datetime_for,power_generated from solar_output_standards where hour_count between $dateDiffHours AND ($dateDiffHours+23) AND  city_name = 'mumbai'";
+/* Select queries return a resultset */
+$link = dbConnection();
+if ($result = mysqli_query($link, $sqlGetRequiredPower)) {
+    printf("Select returned %d rows.\n", mysqli_num_rows($result));
+    $row = mysqli_fetch_all($result,MYSQLI_ASSOC);
+    /* free result set */
+    mysqli_free_result($result);
+}
 $defaulted_Device = array();
 for($i=0; $i<24 ; $i++){
-	$minPowerProduced = $mumbai[$dateDiffHours+$i];
+	$minPowerProduced = $row[$i]['power_generated'];//$mumbai[$dateDiffHours+$i];
 	$timestamp = $dateForSample + ((60*60)*($i+1));
 	//echo "Hour(i)= ".$i. " Power=". $minPowerProduced . " timestamp=". $timestamp."\n";
 	$generatedPower = getPowerConsumed($solar_device_id,$timestamp,FLUX_DB_URL);
