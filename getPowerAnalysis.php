@@ -37,7 +37,7 @@ if(count($defaulted_Device) > 0 ){
 }
 
 function getPowerConsumed($deviceId = '1', $timestamp, $url){
-	$url = $url.'query';
+	$url = $url.'query?';
 	$query = http_build_query([
          'db' => 'oorjan',
          'q' => "SELECT * FROM solar_device_performance where deviceId='".$deviceId."' AND time=". $timestamp

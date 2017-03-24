@@ -9,7 +9,7 @@ echo 'Started for ';
 echo $dateForSample = strtotime($inputDate);
 echo ' From ';
 echo $dateStartFrom = strtotime($yearStartDate);
-$hoursToLowProduction = array(12,3);
+$hoursToLowProduction = array(12,13,15);
 echo ' Diff ';
 echo $dateDiff = ($dateStartFrom - $dateForSample);
 //echo $dateDiff;
@@ -21,8 +21,8 @@ if($dateDiffHours >= 0){
 			$timestamp = strtotime($inputDate) + ((60*60)*($i+1));
 		} else {
 			if(in_array($i, $hoursToLowProduction)){
-				$powerProduced =(($mumbai[$dateDiffHours+$i]* 70)/100);
-				$timestamp = strtotime($inputDate) + ((60*60)*($i+1));
+				echo $powerProduced =(($mumbai[$dateDiffHours+$i]* 70)/100);
+				echo $timestamp = strtotime($inputDate) + ((60*60)*($i+1));
 			} else {
 				$powerProduced =(($mumbai[$dateDiffHours+$i]* 120)/100);
 				$timestamp = strtotime($inputDate) + ((60*60)*($i+1));
@@ -36,7 +36,7 @@ if($dateDiffHours >= 0){
 }
 
 function store_date_influx($powerProduced, $timestamp,$url){
-	$url = $url . '?db=oorjan';
+ 	$url = $url . 'write?db=oorjan';
 	$input = 'solar_device_performance,deviceId=1,output=' . $powerProduced . ' inputFrom="script" '.$timestamp;
 	$curl = curl_init();
     curl_setopt_array($curl, array(
