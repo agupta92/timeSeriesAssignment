@@ -1,11 +1,11 @@
 <?php
 
-define('FLUX_DB_URL', 'http://localhost:8086/');
+define('FLUX_DB_URL', '');
 function dbConnection(){
-    $dbhost = '127.0.0.1:3306';
-    $dbuser = 'oorjan_user';
-    $dbpass = 'admin123';
-    $link = mysqli_connect($dbhost, $dbuser, $dbpass,'oorjan_db');
+    $dbhost = '';
+    $dbuser = '';
+    $dbpass = '';
+    $link = mysqli_connect($dbhost, $dbuser, $dbpass,'');
 	/* check connection */
 	if (mysqli_connect_errno()) {
 	    printf("Connect failed: %s\n", mysqli_connect_error());
