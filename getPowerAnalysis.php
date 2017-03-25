@@ -17,11 +17,10 @@ $input_date = $_GET['date'];
 $sqlGetUserCity = "select user_city from user_records where user_public_id =". $solar_device_id;
 $link = dbConnection();
 if ($result = mysqli_query($link, $sqlGetUserCity)) {
-	if(mysqli_num_rows($result) == 0){
-		returnCustomError("Customer no found w.r.t Solar ID");
-	}
     $final_result = mysqli_fetch_all($result,MYSQLI_ASSOC);
     mysqli_free_result($final_result);
+} else {
+	returnCustomError("Customer no found w.r.t Solar ID");
 }
 $user_city = $final_result[0]['user_city'];
 //Creating date time object for input date
@@ -33,13 +32,12 @@ $dateDiff = ($dateStartFrom - $dateForSample);
 //Converting epoc time to hours
 $dateDiffHours = abs($dateDiff/3600);
 //Getting Input date 24 hours Power standards from mysql
-$sqlGetRequiredPower = "select datetime_for,power_generated from solar_output_standards where hour_count between $dateDiffHours AND ($dateDiffHours+23) AND  city_name = 'mumbai'";
+$sqlGetRequiredPower = "select datetime_for,power_generated from solar_output_standards where hour_count between $dateDiffHours AND ($dateDiffHours+23) AND  city_name = '$user_city'";
 /* Select queries return a resultset */
 if ($result = mysqli_query($link, $sqlGetRequiredPower)) {
-	if(mysqli_num_rows($result) == 0){
-		returnCustomError("Data samples not present for $user_city and $dateDiffHours hours");
-	}
     $row = mysqli_fetch_all($result,MYSQLI_ASSOC);
+} else {
+	returnCustomError("Data samples not present for $user_city and $dateDiffHours hours");
 }
 //Closign DB Connection
 mysqli_close($link);
