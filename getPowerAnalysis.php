@@ -1,42 +1,53 @@
 <?php
 error_reporting(E_ERROR | E_PARSE | E_NOTICE);
+/*******Including Config file*********/
 include('staticContent.php');
 include('config.php');
 
+/******Validation check for Inputs******/
 if(!isset($_GET)){
    $message="Argument Not received";
    returnCustomError($message);
 }
+//Storing Inpuuts
 $solar_device_id = $_GET['solar_id'];
 $input_date = $_GET['date'];
 
+//Get the city name from solar Id
 $sqlGetUserCity = "select user_city from user_records where user_public_id =". $solar_device_id;
 $link = dbConnection();
 if ($result = mysqli_query($link, $sqlGetUserCity)) {
+	if(mysqli_num_rows($result) == 0){
+		returnCustomError("Customer no found w.r.t Solar ID");
+	}
     $final_result = mysqli_fetch_all($result,MYSQLI_ASSOC);
-	/* free result set */
     mysqli_free_result($final_result);
 }
 $user_city = $final_result[0]['user_city'];
+//Creating date time object for input date
 $startTime = strtotime(date("d-m-Y", strtotime($input_date)));
 $dateForSample = $startTime;
+//Generating 1st day 1st Month of input year (2017-01-01 00:00:00) in epoc
 $dateStartFrom = strtotime(date('Y-01-01', $startTime));
 $dateDiff = ($dateStartFrom - $dateForSample);
+//Converting epoc time to hours
 $dateDiffHours = abs($dateDiff/3600);
+//Getting Input date 24 hours Power standards from mysql
 $sqlGetRequiredPower = "select datetime_for,power_generated from solar_output_standards where hour_count between $dateDiffHours AND ($dateDiffHours+23) AND  city_name = 'mumbai'";
 /* Select queries return a resultset */
-$link = dbConnection();
 if ($result = mysqli_query($link, $sqlGetRequiredPower)) {
-    printf("Select returned %d rows.\n", mysqli_num_rows($result));
+	if(mysqli_num_rows($result) == 0){
+		returnCustomError("Data samples not present for $user_city and $dateDiffHours hours");
+	}
     $row = mysqli_fetch_all($result,MYSQLI_ASSOC);
-    /* free result set */
-    mysqli_free_result($result);
 }
+//Closign DB Connection
+mysqli_close($link);
+//Array used to store hours and its values who didnt generated expected output.
 $defaulted_Device = array();
 for($i=0; $i<24 ; $i++){
 	$minPowerProduced = $row[$i]['power_generated'];//$mumbai[$dateDiffHours+$i];
 	$timestamp = $dateForSample + ((60*60)*($i+1));
-	//echo "Hour(i)= ".$i. " Power=". $minPowerProduced . " timestamp=". $timestamp."\n";
 	$generatedPower = getPowerConsumed($solar_device_id,$timestamp,FLUX_DB_URL);
 	if(!$generatedPower){
 		continue;
@@ -54,6 +65,11 @@ if(count($defaulted_Device) > 0 ){
 	returnSuccess($message);
 }
 
+/*
+* This function read query from influx and return the expected output.
+* @input device Id, Timestamp, Influx URL
+* @output Power generated for that device for that input hour.
+*/
 function getPowerConsumed($deviceId = '1', $timestamp, $url){
 	$url = $url.'query?';
 	$query = http_build_query([
@@ -86,16 +102,19 @@ function getPowerConsumed($deviceId = '1', $timestamp, $url){
 	}
 }
 
+//return success json
 function returnSuccess($message, $data=array(), $meta = null) {
     $result = json_encode(array( "m" => $message, "s" => 1,"meta" => $meta, "d" => $data));
     returnJSON($result);
 }
 
+//return custom error json
 function returnCustomError($message) {
     $result = json_encode(array(  "m" => $message, "s" => 0, "d" => array()));
     returnJSON($result);
 }
 
+//return json
 function returnJSON($result){
     header("Content-type: application/json");
     echo $result;
