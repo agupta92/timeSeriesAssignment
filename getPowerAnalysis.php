@@ -43,11 +43,13 @@ if ($result = mysqli_query($link, $sqlGetRequiredPower)) {
 mysqli_close($link);
 //Array used to store hours and its values who didnt generated expected output.
 $defaulted_Device = array();
+$count_data_not_found = 0;
 for($i=0; $i<24 ; $i++){
 	$minPowerProduced = $row[$i]['power_generated'];//$mumbai[$dateDiffHours+$i];
 	$timestamp = $dateForSample + ((60*60)*($i+1));
 	$generatedPower = getPowerConsumed($solar_device_id,$timestamp,FLUX_DB_URL);
 	if(!$generatedPower){
+		$count_data_not_found++;
 		continue;
 	}
 	$output_produced_percent = (($generatedPower/$minPowerProduced)*100);
@@ -58,7 +60,10 @@ for($i=0; $i<24 ; $i++){
 if(count($defaulted_Device) > 0 ){
 	$message = "Successful";
 	returnSuccess($message,$defaulted_Device);
-} else {
+} else if($count_data_not_found == 24){
+	$message = "Data now found for $user_city and $solar_device_id user";
+        returnSuccess($message,$defaulted_Device);
+} else{
 	$message = "Output generated is above or equal to threshold power";
 	returnSuccess($message);
 }
