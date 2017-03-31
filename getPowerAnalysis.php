@@ -51,7 +51,7 @@ if(count($defaulted_Device) > 0 ){
 	$message = "Successful";
 	returnSuccess($message,$defaulted_Device);
 } else if($count_data_not_found == 24){
-	$message = "Data now found for $user_city and $solar_device_id user";
+	$message = "Data not found for $user_city and $solar_device_id user";
         returnSuccess($message,$defaulted_Device);
 } else{
 	$message = "Output generated is above or equal to threshold power";
