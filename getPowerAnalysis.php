@@ -14,16 +14,15 @@ $solar_device_id = $_GET['solar_id'];
 $input_date = $_GET['date'];
 
 //Get the city name from solar Id
-$sqlGetUserCity = "select user_city from user_records where user_public_id =". $solar_device_id;
+$sqlGetUserCity = "select id.standard_output from user_records ur left join installation_details id on id.installation_id =ur.installation_id where ur.user_public_id =". $solar_device_id;
 $link = dbConnection();
 if ($result = mysqli_query($link, $sqlGetUserCity)) {
     $final_result = mysqli_fetch_all($result,MYSQLI_ASSOC);
+    $yearly_standard_output = (json_decode($final_result[0]['standard_output']));
     mysqli_free_result($final_result);
 } else {
 	returnCustomError("Customer no found w.r.t Solar ID");
 }
-$user_city = $final_result[0]['user_city'];
-//Creating date time object for input date
 $startTime = strtotime(date("d-m-Y", strtotime($input_date)));
 $dateForSample = $startTime;
 //Generating 1st day 1st Month of input year (2017-01-01 00:00:00) in epoc
@@ -31,21 +30,12 @@ $dateStartFrom = strtotime(date('Y-01-01', $startTime));
 $dateDiff = ($dateStartFrom - $dateForSample);
 //Converting epoc time to hours
 $dateDiffHours = abs($dateDiff/3600);
-//Getting Input date 24 hours Power standards from mysql
-$sqlGetRequiredPower = "select datetime_for,power_generated from solar_output_standards where hour_count between $dateDiffHours AND ($dateDiffHours+23) AND  city_name = '$user_city'";
-/* Select queries return a resultset */
-if ($result = mysqli_query($link, $sqlGetRequiredPower)) {
-    $row = mysqli_fetch_all($result,MYSQLI_ASSOC);
-} else {
-	returnCustomError("Data samples not present for $user_city and $dateDiffHours hours");
-}
-//Closign DB Connection
 mysqli_close($link);
 //Array used to store hours and its values who didnt generated expected output.
 $defaulted_Device = array();
 $count_data_not_found = 0;
 for($i=0; $i<24 ; $i++){
-	$minPowerProduced = $row[$i]['power_generated'];//$mumbai[$dateDiffHours+$i];
+	$minPowerProduced = $yearly_standard_output[$dateDiffHours + $i];//$mumbai[$dateDiffHours+$i];
 	$timestamp = $dateForSample + ((60*60)*($i+1));
 	$generatedPower = getPowerConsumed($solar_device_id,$timestamp,FLUX_DB_URL);
 	if(!$generatedPower){
