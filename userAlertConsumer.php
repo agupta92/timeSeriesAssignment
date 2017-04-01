@@ -68,7 +68,7 @@ class WorkerReceiver
         $solar_device_id = $user_public_id;
         $input_date = $date;
         //Get the Standard output
-        $sqlGetUserCity = "select id.standard_output from user_records ur left join installation_details id on id.installation_id =ur.installation_id where ur.user_public_id =". $solar_device_id;
+        $sqlGetUserCity = "select id.standard_output, ur.email_id from user_records ur left join installation_details id on id.installation_id =ur.installation_id where ur.user_public_id =". $solar_device_id;
         $link = dbConnection();
         if ($result = mysqli_query($link, $sqlGetUserCity)) {
             $final_result = mysqli_fetch_all($result,MYSQLI_ASSOC);
@@ -77,6 +77,7 @@ class WorkerReceiver
         } else {
             returnCustomError("Customer no found w.r.t Solar ID");
         }
+        $user_email = $final_result[0]['email_id'];
         $startTime = strtotime(date("d-m-Y", strtotime($input_date)));
         $dateForSample = $startTime;
         //Generating 1st day 1st Month of input year (2017-01-01 00:00:00) in epoc
@@ -103,7 +104,7 @@ class WorkerReceiver
             }
         }
         if(count($defaulted_Device) > 0 ){
-            return $this->sendAlertEmail($defaulted_Device);
+            return $this->sendAlertEmail($defaulted_Device, $user_email);
         } else if($count_data_not_found == 24){
             $message = "Data not found for $solar_device_id user";
             $this->returnSuccess($message,$defaulted_Device);
@@ -191,9 +192,9 @@ class WorkerReceiver
         return $html;
     }
     //Mail Sending
-    function sendAlertEmail($defaulted_hours){
+    function sendAlertEmail($defaulted_hours,$user_email){
         $txt = $this->build_table($defaulted_hours);
-        $to = "agupta.92@gmail.com";
+        $to = $user_email;
         $subject = "Solar Alert!";
         $headers = "From: webmaster@example.com" . "\r\n" .
         "CC: agupta.92@gmail.com". "\r\n";
