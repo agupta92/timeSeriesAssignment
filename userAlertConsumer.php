@@ -42,10 +42,10 @@ class WorkerReceiver
 
     public function process(AMQPMessage $msg)
     {
-        \$i = 0;
+        $i = 0;
         $result = false;
         while ($i < 3){
-            echo ($msg->body.'  ');
+            //echo ($msg->body.'  ');
             $body_array = json_decode($msg->body, true);
             $result = $this->analyseSolarOutput($body_array['user_id'], $body_array['date']);
             if($result){
@@ -99,7 +99,7 @@ class WorkerReceiver
             }
             $output_produced_percent = (($generatedPower/$minPowerProduced)*100);
             if( $output_produced_percent < 80){
-                $defaulted_Device[] = array('time'=> date("d-m-Y H:i:s", $timestamp), 'minOutput' => $minPowerProduced, 'actualOutput'=> $generatedPower, 'percentDiff'=>$output_produced_percent);
+                $defaulted_Device[] = array('Date-Time'=> date("d-m-Y H:i:s", $timestamp), 'Min Output' => $minPowerProduced, 'Actual Output'=> $generatedPower, 'Difference(%)'=>round($output_produced_percent));
             }
         }
         if(count($defaulted_Device) > 0 ){
