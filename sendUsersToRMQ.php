@@ -14,7 +14,7 @@ if ($result = mysqli_query($link, $sqlGetUserIds)) {
 } else {
 	returnCustomError("No user ID found");
 }
-$today_date = date('d-m-Y');
+$today_date = '02-02-2017';//date('d-m-Y');
 foreach ($final_result as $key => $value) {
 	echo "Publishing for " . $value[0].'\n';
 	$msg = new AMQPMessage(json_encode(array('user_id'=>$value[0],'date'=>$today_date)),array('delivery_mode' => 2));

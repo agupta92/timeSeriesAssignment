@@ -105,8 +105,9 @@ class WorkerReceiver
         for($i=0; $i<24 ; $i++){
             $minPowerProduced = $yearly_standard_output[$dateDiffHours + $i];//$mumbai[$dateDiffHours+$i];
             $timestamp = $dateForSample + ((60*60)*($i+1));
-            $generatedPower = getPowerConsumed($solar_device_id,$timestamp,FLUX_DB_URL);
-            if(!$generatedPower){
+            $generatedPower = $this->getPowerConsumed($solar_device_id,$timestamp,FLUX_DB_URL);
+           var_dump($generatedPower);
+		 if(!$generatedPower){
                 $count_data_not_found++;
                 continue;
             }
@@ -116,16 +117,17 @@ class WorkerReceiver
             }
         }
         if(count($defaulted_Device) > 0 ){
-            $message = "Successful";
-            returnSuccess($message,$defaulted_Device);
+            $this->sendAlertEmail($defaulted_Device);
+		$message = "Successful";
+            $this->returnSuccess($message,$defaulted_Device);
             return true;
         } else if($count_data_not_found == 24){
-            $message = "Data not found for $user_city and $solar_device_id user";
-            returnSuccess($message,$defaulted_Device);
+            $message = "Data not found for $solar_device_id user";
+            $this->returnSuccess($message,$defaulted_Device);
             return true;
         } else{
             $message = "Output generated is above or equal to threshold power";
-            returnSuccess($message);
+            $this->returnSuccess($message);
             return true;
         }
     }
@@ -170,13 +172,13 @@ function getPowerConsumed($deviceId = '1', $timestamp, $url){
 //return success json
 function returnSuccess($message, $data=array(), $meta = null) {
     $result = json_encode(array( "m" => $message, "s" => 1,"meta" => $meta, "d" => $data));
-    returnJSON($result);
+    $this->returnJSON($result);
 }
 
 //return custom error json
 function returnCustomError($message) {
     $result = json_encode(array(  "m" => $message, "s" => 0, "d" => array()));
-    returnJSON($result);
+    $this->returnJSON($result);
 }
 
 //return json
@@ -185,6 +187,48 @@ function returnJSON($result){
     echo $result;
 }
 
+
+
+function build_table($array){
+    // start table
+    $html = '<html><body><form><table>';
+    // header row
+    $html .= '<tr>';
+    foreach($array[0] as $key=>$value){
+            $html .= '<th>' . htmlspecialchars($key) . '</th>';
+        }
+    $html .= '</tr>';
+
+    // data rows
+    foreach( $array as $key=>$value){
+        $html .= '<tr>';
+        foreach($value as $key2=>$value2){
+            $html .= '<td style="padding:0px 25px 0px 5px">' . htmlspecialchars($value2) . '</td>';
+        }
+        $html .= '</tr>';
+    }
+
+    // finish table and return it
+
+    $html .= '</table></form></body></html>';
+    return $html;
+}
+//Mail Sending
+function sendAlertEmail($defaulted_hours){
+
+echo $txt = $this->build_table($defaulted_hours);
+$to = "agupta.92@gmail.com";
+$subject = "Solar Alert!";
+//$txt = "Hello world!";
+$headers = "From: webmaster@example.com" . "\r\n" .
+"CC: agupta.92@gmail.com". "\r\n";
+$headers .= 'MIME-Version: 1.0'. "\r\n"; 
+$headers .= 'Content-Type: text/html; charset=ISO-8859-1'. "\r\n";
+$result = mail($to,$subject,$txt,$headers);
+var_dump($result);
+
+
 }
 
+}
 ?>
