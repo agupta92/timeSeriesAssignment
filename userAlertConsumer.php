@@ -22,12 +22,6 @@ class WorkerReceiver
             1,      #prefetch count - prefetch window in terms of whole messages
             null    #global - global=null to mean that the QoS settings should apply per-consumer, global=true to mean that the QoS settings should apply per-channel
             );
-
-        /**
-         * indicate interest in consuming messages from a particular queue. When they do
-         * so, we say that they register a consumer or, simply put, subscribe to a queue.
-         * Each consumer (subscription) has an identifier called a consumer tag
-         */
         $channel->basic_consume(
             'user_alert_queue',        #queue
             '',                     #consumer tag - Identifier for the consumer, valid within the current channel. just string
@@ -39,7 +33,6 @@ class WorkerReceiver
             );
 
         while(count($channel->callbacks)) {
-            //$this->log->addInfo('Waiting for incoming messages');
             echo " Waiting\n";
             $channel->wait();
         }
@@ -48,19 +41,13 @@ class WorkerReceiver
     }
 
     public function process(AMQPMessage $msg)
-    {	//var_dump($msg->body);
-        $i = 0;
+    {
+        \$i = 0;
         $result = false;
         while ($i < 3){
             echo ($msg->body.'  ');
             $body_array = json_decode($msg->body, true);
             $result = $this->analyseSolarOutput($body_array['user_id'], $body_array['date']);
-            /**
-             * If a consumer dies without sending an acknowledgement the AMQP broker
-             * will redeliver it to another consumer or, if none are available at the
-             * time, the broker will wait until at least one consumer is registered
-             * for the same queue before attempting redelivery
-             */
             if($result){
                 $msg->delivery_info['channel']->basic_ack($msg->delivery_info['delivery_tag']);
                 return true;
@@ -80,8 +67,7 @@ class WorkerReceiver
     	//Storing Inpuuts
         $solar_device_id = $user_public_id;
         $input_date = $date;
-
-        //Get the city name from solar Id
+        //Get the Standard output
         $sqlGetUserCity = "select id.standard_output from user_records ur left join installation_details id on id.installation_id =ur.installation_id where ur.user_public_id =". $solar_device_id;
         $link = dbConnection();
         if ($result = mysqli_query($link, $sqlGetUserCity)) {
@@ -117,10 +103,7 @@ class WorkerReceiver
             }
         }
         if(count($defaulted_Device) > 0 ){
-            $this->sendAlertEmail($defaulted_Device);
-		$message = "Successful";
-            $this->returnSuccess($message,$defaulted_Device);
-            return true;
+            return $this->sendAlertEmail($defaulted_Device);
         } else if($count_data_not_found == 24){
             $message = "Data not found for $solar_device_id user";
             $this->returnSuccess($message,$defaulted_Device);
@@ -133,102 +116,91 @@ class WorkerReceiver
     }
 
     /*
-* This function read query from influx and return the expected output.
-* @input device Id, Timestamp, Influx URL
-* @output Power generated for that device for that input hour.
-*/
-function getPowerConsumed($deviceId = '1', $timestamp, $url){
-    $url = $url.'query?';
-    $query = http_build_query([
-         'db' => 'oorjan',
-         'q' => "SELECT * FROM solar_device_performance where deviceId='".$deviceId."' AND time=". $timestamp
-        ]);
-    $url = $url . $query;
-    $curl = curl_init();
-    curl_setopt_array($curl, array(
-    CURLOPT_URL => $url,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_ENCODING => "",
-    CURLOPT_MAXREDIRS => -1,
-    CURLOPT_TIMEOUT => 300,
-    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-    CURLOPT_CUSTOMREQUEST => "GET",
-    CURLOPT_HTTPHEADER => array("cache-control: no-cache","content-type: text/plain"),
-    ));
-    $result = curl_exec($curl);
-    $result = json_decode($result);
-    $error = curl_error($curl);
-    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    curl_close($curl);
-    if($httpCode == 200 ){
-        if(isset($result->results[0]->series)){
-        return $result->results[0]->series[0]->values[0][3];
-    }else {
-        return false;
+    * This function read query from influx and return the expected output.
+    * @input device Id, Timestamp, Influx URL
+    * @output Power generated for that device for that input hour.
+    */
+    function getPowerConsumed($deviceId = '1', $timestamp, $url){
+        $url = $url.'query?';
+        $query = http_build_query([
+             'db' => 'oorjan',
+             'q' => "SELECT * FROM solar_device_performance where deviceId='".$deviceId."' AND time=". $timestamp
+            ]);
+        $url = $url . $query;
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => -1,
+        CURLOPT_TIMEOUT => 300,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "GET",
+        CURLOPT_HTTPHEADER => array("cache-control: no-cache","content-type: text/plain"),
+        ));
+        $result = curl_exec($curl);
+        $result = json_decode($result);
+        $error = curl_error($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+        if($httpCode == 200 ){
+            if(isset($result->results[0]->series)){
+            return $result->results[0]->series[0]->values[0][3];
+        }else {
+            return false;
+            }
         }
     }
-}
 
-//return success json
-function returnSuccess($message, $data=array(), $meta = null) {
-    $result = json_encode(array( "m" => $message, "s" => 1,"meta" => $meta, "d" => $data));
-    $this->returnJSON($result);
-}
+    //return success json
+    function returnSuccess($message, $data=array(), $meta = null) {
+        $result = json_encode(array( "m" => $message, "s" => 1,"meta" => $meta, "d" => $data));
+        $this->returnJSON($result);
+    }
 
-//return custom error json
-function returnCustomError($message) {
-    $result = json_encode(array(  "m" => $message, "s" => 0, "d" => array()));
-    $this->returnJSON($result);
-}
+    //return custom error json
+    function returnCustomError($message) {
+        $result = json_encode(array(  "m" => $message, "s" => 0, "d" => array()));
+        $this->returnJSON($result);
+    }
 
-//return json
-function returnJSON($result){
-    header("Content-type: application/json");
-    echo $result;
-}
+    //return json
+    function returnJSON($result){
+        header("Content-type: application/json");
+        echo $result;
+    }
 
-
-
-function build_table($array){
-    // start table
-    $html = '<html><body><form><table>';
-    // header row
-    $html .= '<tr>';
-    foreach($array[0] as $key=>$value){
-            $html .= '<th>' . htmlspecialchars($key) . '</th>';
-        }
-    $html .= '</tr>';
-
-    // data rows
-    foreach( $array as $key=>$value){
+    function build_table($array){
+        // start table
+        $html = '<html><body><form><table>';
+        // header row
         $html .= '<tr>';
-        foreach($value as $key2=>$value2){
-            $html .= '<td style="padding:0px 25px 0px 5px">' . htmlspecialchars($value2) . '</td>';
+        foreach($array[0] as $key=>$value){
+                $html .= '<th>' . htmlspecialchars($key) . '</th>';
         }
         $html .= '</tr>';
+        // data rows
+        foreach( $array as $key=>$value){
+            $html .= '<tr>';
+            foreach($value as $key2=>$value2){
+                $html .= '<td style="padding:0px 25px 0px 5px">' . htmlspecialchars($value2) . '</td>';
+            }
+            $html .= '</tr>';
+        }
+        $html .= '</table></form></body></html>';
+        return $html;
     }
-
-    // finish table and return it
-
-    $html .= '</table></form></body></html>';
-    return $html;
-}
-//Mail Sending
-function sendAlertEmail($defaulted_hours){
-
-echo $txt = $this->build_table($defaulted_hours);
-$to = "agupta.92@gmail.com";
-$subject = "Solar Alert!";
-//$txt = "Hello world!";
-$headers = "From: webmaster@example.com" . "\r\n" .
-"CC: agupta.92@gmail.com". "\r\n";
-$headers .= 'MIME-Version: 1.0'. "\r\n"; 
-$headers .= 'Content-Type: text/html; charset=ISO-8859-1'. "\r\n";
-$result = mail($to,$subject,$txt,$headers);
-var_dump($result);
-
-
-}
-
+    //Mail Sending
+    function sendAlertEmail($defaulted_hours){
+        $txt = $this->build_table($defaulted_hours);
+        $to = "agupta.92@gmail.com";
+        $subject = "Solar Alert!";
+        $headers = "From: webmaster@example.com" . "\r\n" .
+        "CC: agupta.92@gmail.com". "\r\n";
+        $headers .= 'MIME-Version: 1.0'. "\r\n";
+        $headers .= 'Content-Type: text/html; charset=ISO-8859-1'. "\r\n";
+        $result = mail($to,$subject,$txt,$headers);
+        return $result;
+    }
 }
 ?>
