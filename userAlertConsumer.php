@@ -92,14 +92,14 @@ class WorkerReceiver
             $minPowerProduced = $yearly_standard_output[$dateDiffHours + $i];//$mumbai[$dateDiffHours+$i];
             $timestamp = $dateForSample + ((60*60)*($i+1));
             $generatedPower = $this->getPowerConsumed($solar_device_id,$timestamp,FLUX_DB_URL);
-           var_dump($generatedPower);
+            //var_dump($generatedPower);
 		 if(!$generatedPower){
                 $count_data_not_found++;
                 continue;
             }
             $output_produced_percent = (($generatedPower/$minPowerProduced)*100);
             if( $output_produced_percent < 80){
-                $defaulted_Device[] = array('Date-Time'=> date("d-m-Y H:i:s", $timestamp), 'Min Output' => $minPowerProduced, 'Actual Output'=> $generatedPower, 'Difference(%)'=>round($output_produced_percent));
+                $defaulted_Device[] = array('Date-Time(dd-mm-yy)'=> date("d-m-Y H:i:s", $timestamp), 'Min Output(W)' => $minPowerProduced, 'Actual Output(W)'=> $generatedPower, 'Difference(%)'=>round($output_produced_percent));
             }
         }
         if(count($defaulted_Device) > 0 ){
