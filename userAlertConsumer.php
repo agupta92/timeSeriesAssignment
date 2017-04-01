@@ -73,7 +73,7 @@ class WorkerReceiver
         if ($result = mysqli_query($link, $sqlGetUserCity)) {
             $final_result = mysqli_fetch_all($result,MYSQLI_ASSOC);
             $yearly_standard_output = (json_decode($final_result[0]['standard_output']));
-            mysqli_free_result($final_result);
+            mysqli_free_result($result);
         } else {
             returnCustomError("Customer no found w.r.t Solar ID");
         }
@@ -196,12 +196,13 @@ class WorkerReceiver
         $txt = $this->build_table($defaulted_hours);
         $to = $user_email;
         $subject = "Solar Alert!";
-        $headers = "From: webmaster@example.com" . "\r\n" .
+        $headers = "From: ankitgupta@oorjan.com" . "\r\n" .
         "CC: agupta.92@gmail.com". "\r\n";
         $headers .= 'MIME-Version: 1.0'. "\r\n";
         $headers .= 'Content-Type: text/html; charset=ISO-8859-1'. "\r\n";
         $result = mail($to,$subject,$txt,$headers);
-        return $result;
+        if($result) echo 'Email Sent $user_email';
+	return $result;
     }
 }
 ?>
